@@ -30,15 +30,27 @@ public class UrlShortenerController {
             return ResponseEntity.notFound().build();
         }
 
+        ShortUrl url = record.get();
+        url.setClickCount(url.getClickCount() + 1);
+        url.setLastAccessedAt(LocalDateTime.now());
+        shortUrlRepository.save(url);
+
         return ResponseEntity
                 .status(HttpStatus.FOUND)
-                .location(URI.create(record.get().getLongUrl()))
+                .location(URI.create(url.getLongUrl()))
                 .build();
     }
 
+    @GetMapping("/stats/{code}")
+    public ResponseEntity<ShortUrl> stats(@PathVariable String code) {
+        return shortUrlRepository.findByShortCode(code)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
 
     @PostMapping("/shorten")
-    public String shorten(@RequestParam String longUrl) {
+    public ResponseEntity<String> shorten(@RequestParam String longUrl) {
+
         String code = urlShortenerService.generateShortCode();
 
         ShortUrl record = new ShortUrl();
@@ -48,6 +60,6 @@ public class UrlShortenerController {
 
         shortUrlRepository.save(record);
 
-        return "http://localhost:8080/" + code;
+        return ResponseEntity.ok("http://localhost:8080/" + code);
     }
 }

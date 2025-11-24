@@ -11,12 +11,20 @@ public class ShortUrl {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String longUrl;
+
+    @Column(unique = true, nullable = false)
     private String shortCode;
+
     private LocalDateTime createdAt;
     private LocalDateTime expiresAt;
+    private LocalDateTime lastAccessedAt;
 
-    // getters and setters
+    @Column(nullable = false)
+    private int clickCount = 0;
+
+    // Getters & Setters
     public Long getId() {
         return id;
     }
@@ -55,5 +63,21 @@ public class ShortUrl {
 
     public void setExpiresAt(LocalDateTime expiresAt) {
         this.expiresAt = expiresAt;
+    }
+
+    public int getClickCount() {
+        return clickCount;
+    }
+
+    public void setClickCount(int clickCount) {
+        this.clickCount = clickCount;
+    }
+
+    public LocalDateTime getLastAccessedAt() {
+        return lastAccessedAt;
+    }
+
+    public void setLastAccessedAt(LocalDateTime lastAccessedAt) {
+        this.lastAccessedAt = lastAccessedAt;
     }
 }
