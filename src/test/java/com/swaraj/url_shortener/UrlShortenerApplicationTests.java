@@ -3,7 +3,7 @@ package com.swaraj.url_shortener;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
+@SpringBootTest(classes = {})
 class UrlShortenerApplicationTests {
 
 	@Test

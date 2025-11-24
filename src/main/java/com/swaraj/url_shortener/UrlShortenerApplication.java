@@ -2,9 +2,12 @@ package com.swaraj.url_shortener;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
+import org.springframework.boot.persistence.autoconfigure.EntityScan;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
-@SpringBootApplication(exclude = { DataSourceAutoConfiguration.class })
+@EnableJpaRepositories(basePackages = "com.swaraj.url_shortener.repository")
+@EntityScan(basePackages = "com.swaraj.url_shortener.model")
+@SpringBootApplication
 public class UrlShortenerApplication {
 
 	public static void main(String[] args) {
