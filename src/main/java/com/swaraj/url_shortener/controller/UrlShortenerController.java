@@ -49,6 +49,54 @@ public class UrlShortenerController {
                 .build();
     }
 
+    @GetMapping("/preview/{code}")
+    public ResponseEntity<String> preview(@PathVariable String code) {
+        Optional<ShortUrl> record = shortUrlRepository.findByShortCode(code);
+
+        if (record.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        ShortUrl url = record.get();
+        String shortUrl = "http://localhost:8080/" + code;
+        String qrCodeBase64 = QrCodeGenerator.generateQRCodeImage(shortUrl);
+
+        String html = "<html>" +
+                "<head>" +
+                "<title>URL Preview</title>" +
+                "<style>" +
+                "body{font-family:Arial;padding:30px;text-align:center;background:#FAFAFA;}" +
+                "a{color:#007BFF;font-size:18px;text-decoration:none;}" +
+                "img{margin-top:20px;border:3px solid #000;border-radius:10px;}" +
+                ".box{background:#FFF;padding:25px;border-radius:12px;display:inline-block;box-shadow:0 4px 10px rgba(0,0,0,0.1);}" +
+                "button{margin-top:20px;padding:10px 16px;font-size:16px;background:black;color:white;border:none;border-radius:6px;cursor:pointer;}" +
+                "</style>" +
+                "</head><body>" +
+                "<div class='box'>" +
+                "<h2>Short Link Ready</h2>" +
+                "<p><strong>Short URL:</strong><br><a href='" + shortUrl + "'>" + shortUrl + "</a></p>" +
+                "<p><strong>Original:</strong><br>" + url.getLongUrl() + "</p>" +
+                "<img id='qrImage' src='data:image/png;base64," + qrCodeBase64 + "' width='220'/>" +
+                "<br>" +
+                "<button onclick=\"downloadQR()\">Download QR Code</button>" +
+                "</div>" +
+
+                "<script>" +
+                "function downloadQR() {" +
+                "  const img = document.getElementById('qrImage');" +
+                "  const link = document.createElement('a');" +
+                "  link.href = img.src;" +
+                "  link.download = 'qr-code.png';" +
+                "  link.click();" +
+                "}" +
+                "</script>" +
+                "</body></html>";
+
+        return ResponseEntity.ok().body(html);
+    }
+
+
+
     @PostMapping("/shorten")
     public ResponseEntity<String> shorten(
             @RequestParam String longUrl,
@@ -94,8 +142,8 @@ public class UrlShortenerController {
 
         String responseJson = "{ \"shortUrl\": \"" + shortUrl + "\", " +
                 "\"qrCode\": \"data:image/png;base64," + qrCodeBase64 + "\" }";
-
-        return ResponseEntity.ok(responseJson);
+        String previewUrl = "http://localhost:8080/preview/" + code;
+        return ResponseEntity.ok(previewUrl);
 
     }
 
