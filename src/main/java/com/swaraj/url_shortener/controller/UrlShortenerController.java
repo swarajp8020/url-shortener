@@ -3,6 +3,7 @@ package com.swaraj.url_shortener.controller;
 import com.swaraj.url_shortener.model.ShortUrl;
 import com.swaraj.url_shortener.repository.ShortUrlRepository;
 import com.swaraj.url_shortener.service.UrlShortenerService;
+import com.swaraj.url_shortener.util.QrCodeGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -86,8 +87,16 @@ public class UrlShortenerController {
         }
 
         shortUrlRepository.save(record);
+        String shortUrl = "http://localhost:8080/" + code;
 
-        return ResponseEntity.ok("http://localhost:8080/" + code);
+        // Generate QR code for this short URL
+        String qrCodeBase64 = QrCodeGenerator.generateQRCodeImage(shortUrl);
+
+        String responseJson = "{ \"shortUrl\": \"" + shortUrl + "\", " +
+                "\"qrCode\": \"data:image/png;base64," + qrCodeBase64 + "\" }";
+
+        return ResponseEntity.ok(responseJson);
+
     }
 
 
