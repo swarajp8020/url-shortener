@@ -67,27 +67,28 @@ public class UrlShortenerController {
         String timerScript = "";
 
         if (secondsLeft > 0) {
+            long totalSeconds = secondsLeft;
             timerScript =
-                    "let secondsLeft = " + secondsLeft + ";" +
+                    "let totalSeconds = " + totalSeconds + ";" +
+                            "let secondsLeft = totalSeconds;" +
                             "const timer = setInterval(() => {" +
-                            "if(secondsLeft <= 0) {" +
+                            "if (secondsLeft <= 0) {" +
                             "document.getElementById('timer').innerHTML = '⛔ Expired';" +
                             "document.getElementById('bar').style.width = '0%';" +
                             "clearInterval(timer);" +
                             "return;" +
                             "}" +
-                            "secondsLeft--;" +
-                            "document.getElementById('timer').innerHTML = 'Expires in ' + secondsLeft + 's';" +
-
-                            // Progress bar shrink
-                            "let percent = (secondsLeft / " + secondsLeft + ") * 100;" +
+                            "let mins = Math.floor(secondsLeft / 60);" +
+                            "let secs = secondsLeft % 60;" +
+                            "let formatted = (mins < 10 ? '0' : '') + mins + 'm : ' + (secs < 10 ? '0' : '') + secs + 's left';" +
+                            "document.getElementById('timer').innerHTML = formatted;" +
+                            "let percent = (secondsLeft / totalSeconds) * 100;" +
                             "document.getElementById('bar').style.width = percent + '%';" +
-
-                            // Color changes
                             "if(percent < 60) document.getElementById('bar').style.background='yellow';" +
                             "if(percent < 30) document.getElementById('bar').style.background='red';" +
-
+                            "secondsLeft--;" +
                             "}, 1000);";
+
         }
 
         String expiryText = (url.getExpiresAt() == null)
