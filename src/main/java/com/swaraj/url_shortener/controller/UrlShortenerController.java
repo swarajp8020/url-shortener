@@ -22,7 +22,7 @@ public class UrlShortenerController {
     private ShortUrlRepository shortUrlRepository;
 
     @GetMapping("/{code}")
-    public ResponseEntity<Void> redirect(@PathVariable String code) {
+    public ResponseEntity<?> redirect(@PathVariable String code) {
 
         Optional<ShortUrl> record = shortUrlRepository.findByShortCode(code);
 
@@ -32,12 +32,13 @@ public class UrlShortenerController {
 
         ShortUrl url = record.get();
 
-        // Expiry check
-        if (url.getExpiresAt() != null &&
-                url.getExpiresAt().isBefore(LocalDateTime.now())) {
-            return ResponseEntity.status(HttpStatus.GONE).build();
+        // Check if expired → return 410 with custom message
+        if (url.getExpiresAt() != null && url.getExpiresAt().isBefore(LocalDateTime.now())) {
+            return ResponseEntity.status(HttpStatus.GONE)
+                    .body("⚠️ This short link has expired. Please generate a new one.");
         }
 
+        // Update analytics
         url.setClickCount(url.getClickCount() + 1);
         url.setLastAccessedAt(LocalDateTime.now());
         shortUrlRepository.save(url);
@@ -47,20 +48,33 @@ public class UrlShortenerController {
                 .build();
     }
 
-    @GetMapping("/stats/{code}")
-    public ResponseEntity<ShortUrl> stats(@PathVariable String code) {
-        return shortUrlRepository.findByShortCode(code)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
     @PostMapping("/shorten")
     public ResponseEntity<String> shorten(
             @RequestParam String longUrl,
-            @RequestParam(required = false) Integer expiryMinutes // Optional expiry
+            @RequestParam(required = false) String customCode,
+            @RequestParam(required = false) Integer expiryMinutes
     ) {
 
-        String code = urlShortenerService.generateShortCode();
+        String code;
+
+        if (customCode != null && !customCode.isBlank()) {
+
+            // Validate: only letters + numbers allowed
+            if (!customCode.matches("^[a-zA-Z0-9_-]{4,20}$")) {
+                return ResponseEntity.badRequest()
+                        .body("Custom code must be 4-20 characters and alphanumeric (allowed: - _)");
+            }
+
+            // Check if already used
+            if (shortUrlRepository.findByShortCode(customCode).isPresent()) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body("This custom code is already taken. Try another.");
+            }
+
+            code = customCode;
+        } else {
+            code = urlShortenerService.generateShortCode();
+        }
 
         ShortUrl record = new ShortUrl();
         record.setLongUrl(longUrl);
@@ -74,5 +88,13 @@ public class UrlShortenerController {
         shortUrlRepository.save(record);
 
         return ResponseEntity.ok("http://localhost:8080/" + code);
+    }
+
+
+    @GetMapping("/stats/{code}")
+    public ResponseEntity<ShortUrl> stats(@PathVariable String code) {
+        return shortUrlRepository.findByShortCode(code)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }
