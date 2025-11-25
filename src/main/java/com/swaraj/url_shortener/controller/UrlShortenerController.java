@@ -31,12 +31,18 @@ public class UrlShortenerController {
         }
 
         ShortUrl url = record.get();
+
+        // Expiry check
+        if (url.getExpiresAt() != null &&
+                url.getExpiresAt().isBefore(LocalDateTime.now())) {
+            return ResponseEntity.status(HttpStatus.GONE).build();
+        }
+
         url.setClickCount(url.getClickCount() + 1);
         url.setLastAccessedAt(LocalDateTime.now());
         shortUrlRepository.save(url);
 
-        return ResponseEntity
-                .status(HttpStatus.FOUND)
+        return ResponseEntity.status(HttpStatus.FOUND)
                 .location(URI.create(url.getLongUrl()))
                 .build();
     }
@@ -49,7 +55,10 @@ public class UrlShortenerController {
     }
 
     @PostMapping("/shorten")
-    public ResponseEntity<String> shorten(@RequestParam String longUrl) {
+    public ResponseEntity<String> shorten(
+            @RequestParam String longUrl,
+            @RequestParam(required = false) Integer expiryMinutes // Optional expiry
+    ) {
 
         String code = urlShortenerService.generateShortCode();
 
@@ -57,6 +66,10 @@ public class UrlShortenerController {
         record.setLongUrl(longUrl);
         record.setShortCode(code);
         record.setCreatedAt(LocalDateTime.now());
+
+        if (expiryMinutes != null) {
+            record.setExpiresAt(LocalDateTime.now().plusMinutes(expiryMinutes));
+        }
 
         shortUrlRepository.save(record);
 
